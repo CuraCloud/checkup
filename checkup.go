@@ -204,36 +204,13 @@ func (c Checkup) MarshalJSON() ([]byte, error) {
 		}
 		var providerName string
 		switch c.Storage.(type) {
-		case *GitHub:
-			providerName = "github"
-		case S3:
-			providerName = "s3"
 		case FS:
 			providerName = "fs"
-		case SQL:
-			providerName = "sql"
 		default:
 			return result, fmt.Errorf("unknown Storage type: %T", c.Storage)
 		}
 		sb = []byte(fmt.Sprintf(`{"provider":"%s",%s`, providerName, string(sb[1:])))
 		wrap("storage", sb)
-	}
-
-	// Notifier
-	if c.Notifier != nil {
-		nb, err := json.Marshal(c.Notifier)
-		if err != nil {
-			return result, err
-		}
-		var notifierName string
-		switch c.Notifier.(type) {
-		case Slack:
-			notifierName = "slack"
-		default:
-			return result, fmt.Errorf("unknown Notifier type")
-		}
-		nb = []byte(fmt.Sprintf(`{"name":"%s",%s`, notifierName, string(nb[1:])))
-		wrap("notifier", nb)
 	}
 
 	return result, nil
@@ -321,13 +298,6 @@ func (c *Checkup) UnmarshalJSON(b []byte) error {
 	}
 	if raw.Storage != nil {
 		switch types.Storage.Provider {
-		case "s3":
-			var storage S3
-			err = json.Unmarshal(raw.Storage, &storage)
-			if err != nil {
-				return err
-			}
-			c.Storage = storage
 		case "fs":
 			var storage FS
 			err = json.Unmarshal(raw.Storage, &storage)
@@ -335,35 +305,8 @@ func (c *Checkup) UnmarshalJSON(b []byte) error {
 				return err
 			}
 			c.Storage = storage
-		case "github":
-			storage := &GitHub{}
-			err = json.Unmarshal(raw.Storage, storage)
-			if err != nil {
-				return err
-			}
-			c.Storage = storage
-		case "sql":
-			var storage SQL
-			err = json.Unmarshal(raw.Storage, &storage)
-			if err != nil {
-				return err
-			}
-			c.Storage = storage
 		default:
 			return fmt.Errorf("%s: unknown Storage type", types.Storage.Provider)
-		}
-	}
-	if raw.Notifier != nil {
-		switch types.Notifier.Name {
-		case "slack":
-			var notifier Slack
-			err = json.Unmarshal(raw.Notifier, &notifier)
-			if err != nil {
-				return err
-			}
-			c.Notifier = notifier
-		default:
-			return fmt.Errorf("%s: unknown Notifier type", types.Notifier.Name)
 		}
 	}
 
